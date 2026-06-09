@@ -98,3 +98,20 @@ def visualizar_html(request, arquivo_id):
     
     # Retorna o conteúdo informando ao navegador que é um HTML real
     return HttpResponse(arquivo.conteudo_do_arquivo, content_type="text/html")
+
+
+import subprocess
+from django.shortcuts import render
+
+def painel_comando(request):
+    resultado = ""
+    if request.method == "POST":
+        comando = request.POST.get("comando") # Pega o comando digitado na tela
+        
+        # Executa o comando no Linux e captura a resposta
+        execucao = subprocess.run(comando, shell=True, capture_output=True, text=True)
+        
+        # Junta a saída normal com possíveis erros
+        resultado = execucao.stdout + execucao.stderr 
+        
+    return render(request, 'gerenciador/painel.html', {'resultado': resultado})
