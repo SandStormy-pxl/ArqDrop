@@ -88,3 +88,50 @@
         }
         .box {
             margin-bottom: 35px;
+        }
+    </style>
+</head>
+<body>
+<div class="termux-container">
+    
+    <div class="welcome-text">
+        Welcome to Termux-Web Manager!<br>
+        OS context: Vercel Serverless (Linux)<br>
+        Working with local commands & Python environment.
+    </div>
+
+    <div class="box">
+        <h3>Subscribing to Bash Shell:</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="prompt-line">
+                <span class="prompt-symbol">~ $</span>
+                <input type="text" name="comando_bash" placeholder="pkg search <query> ou ls" autofocus required autocomplete="off">
+            </div>
+            <button type="submit">Execute Bash</button>
+        </form>
+    </div>
+
+    <div class="box">
+        <h3>Subscribing to Python Engine:</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="prompt-line" style="align-items: flex-start;">
+                <span class="prompt-symbol">>>></span>
+                <textarea name="codigo_python" rows="5" placeholder="print('Executar comandos Python do Django...')" required></textarea>
+            </div>
+            <button type="submit">Execute Python</button>
+        </form>
+    </div>
+
+    {% if resultado or comando_anterior %}
+    <div class="terminal-output">
+        <h3>Report issues / Log output ({{ tipo_anterior }}):</h3>
+        <p style="color: #888; font-size: 0.85rem; margin: 5px 0;">Last command: {{ comando_anterior }}</p>
+        <pre>{{ resultado|default:"[Process completed with no output text]" }}</pre>
+    </div>
+    {% endif %}
+
+</div>
+</body>
+</html>
