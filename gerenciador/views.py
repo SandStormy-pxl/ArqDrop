@@ -100,18 +100,54 @@ def visualizar_html(request, arquivo_id):
     return HttpResponse(arquivo.conteudo_do_arquivo, content_type="text/html")
 
 
+import sys
 import subprocess
+from io import StringIO
 from django.shortcuts import render
 
-def painel_comando(request):
+def painel_controle(request):
     resultado = ""
+    comando_anterior = ""
+    tipo_anterior = ""
+
     if request.method == "POST":
-        comando = request.POST.get("comando") # Pega o comando digitado na tela
-        
-        # Executa o comando no Linux e captura a resposta
-        execucao = subprocess.run(comando, shell=True, capture_output=True, text=True)
-        
-        # Junta a saída normal com possíveis erros
-        resultado = execucao.stdout + execucao.stderr 
-        
-    return render(request, 'gerenciador/painel.html', {'resultado': resultado})
+        # Verifica qual formulário foi enviado
+        if "comando_bash" in request.POST:
+            comando = request.POST.get("comando_bash", "")
+            comando_anterior = comando
+            tipo_anterior = "Bash"
+            try:
+                # Executa o comando Bash no ambiente Linux da Vercel
+                execucao = subprocess.run(
+                    comando, shell=True, capture_output=True, text=True, timeout=10
+                )
+                resultado = execucao.stdout + execucao.stderr
+            except Exception as e:
+                resultado = f"Erro ao executar Bash: {str(e)}"
+
+        elif "codigo_python" in request.POST:
+            codigo = request.POST.get("codigo_python", "")
+            comando_anterior = codigo
+            tipo_anterior = "Python"
+            
+            # Redireciona a saída do print() para uma variável
+            antigo_stdout = sys.stdout
+            resultado_string = StringIO()
+            sys.stdout = resultado_string
+            
+            try:
+                # Executa o código Python no contexto do Django
+                exec(codigo, globals())
+                resultado = resultado_string.getvalue()
+            except Exception as e:
+                resultado = f"Erro no script Python:\n{str(e)}"
+            finally:
+                # Restaura a saída padrão do sistema
+                sys.stdout = antigo_stdout
+
+    contexto = {
+        "resultado": resultado,
+        "comando_anterior": comando_anterior,
+        "tipo_anterior": tipo_anterior,
+    }
+    return render(request, "gerenciador/painel.html", contexto)
