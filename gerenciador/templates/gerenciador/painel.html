@@ -3,49 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Controle do Projeto</title>
+    <title>Termux - Gerenciador</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f9f9f9; color: #333; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        textarea, input[type="text"] { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: monospace; }
-        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        button:hover { background-color: #0056b3; }
-        pre { background-color: #1e1e1e; color: #f1f1f1; padding: 15px; border-radius: 4px; overflow-x: auto; font-family: monospace; white-space: pre-wrap; }
-        .box { border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 20px; border-radius: 6px; background: #fafafa; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h1>💻 Gerenciador de Execução</h1>
-    <p>Ambiente pessoal para controle do projeto Django na Vercel.</p>
-
-    <div class="box">
-        <h3>🐚 Terminal Bash (Linux)</h3>
-        <form method="POST">
-            {% csrf_token %}
-            <label>Digite o comando (Ex: <code>ls -la</code> ou <code>pwd</code>):</label>
-            <input type="text" name="comando_bash" placeholder="ls" required>
-            <button type="submit">Executar Comando Bash</button>
-        </form>
-    </div>
-
-    <div class="box">
-        <h3>🐍 Executor Python (Django Context)</h3>
-        <form method="POST">
-            {% csrf_token %}
-            <label>Digite o código Python (Ex: <code>from gerenciador.models import *; print(Objeto.objects.all())</code>):</label>
-            <textarea name="codigo_python" rows="6" placeholder="print('Olá Mundo')" required></textarea>
-            <button type="submit">Executar Código Python</button>
-        </form>
-    </div>
-
-    {% if resultado or comando_anterior %}
-    <div class="box" style="background: #f0f0f0;">
-        <h3>📊 Saída do Último Comando ({{ tipo_anterior }}):</h3>
-        <p style="font-size: 12px; color: #666;">Comando executado: <code>{{ comando_anterior }}</code></p>
-        <pre>{{ resultado|default:"[Comando executado com sucesso, mas não retornou nenhum texto de saída]" }}</pre>
-    </div>
-    {% endif %}
-</div>
-</body>
-</html>
+        /* Estilo Base do Termux */
+        body { 
+            background-color: #000000; 
+            color: #ffffff; 
+            font-family: 'Courier New', Courier, monospace; 
+            margin: 20px; 
+            padding: 10px;
+        }
+        .termux-container { 
+            max-width: 900px; 
+            margin: 0 auto; 
+        }
+        .welcome-text { 
+            color: #ffffff; 
+            margin-bottom: 25px; 
+            line-height: 1.4;
+        }
+        h3 { 
+            color: #4af626; 
+            margin-bottom: 5px; 
+            font-size: 1.1rem;
+        }
+        
+        /* Inputs e Caixa de Texto Estilo Prompt */
+        .prompt-line {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .prompt-symbol {
+            color: #4af626;
+            font-weight: bold;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+        input[type="text"], textarea { 
+            background-color: #000000; 
+            color: #ffffff; 
+            border: none; 
+            outline: none; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 1rem; 
+            width: 100%;
+        }
+        textarea {
+            resize: vertical;
+            border-left: 2px solid #222;
+            padding-left: 10px;
+        }
+        
+        /* Botões Discretos estilo Terminal */
+        button { 
+            background-color: #111; 
+            color: #4af626; 
+            border: 1px solid #4af626; 
+            padding: 5px 15px; 
+            font-family: 'Courier New', Courier, monospace; 
+            cursor: pointer; 
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+        button:hover { 
+            background-color: #4af626; 
+            color: #000000; 
+        }
+        
+        /* Bloco de Output do Terminal */
+        .terminal-output { 
+            margin-top: 30px; 
+            border-top: 1px dashed #333; 
+            padding-top: 20px;
+        }
+        pre { 
+            color: #ffffff; 
+            background-color: #000000; 
+            white-space: pre-wrap; 
+            word-wrap: break-word; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .box {
+            margin-bottom: 35px;
