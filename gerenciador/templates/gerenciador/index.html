@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        twitterBlue: '#1d9bf0',
+                        twitterHover: '#1a8cd8',
+                        darkBg: '#0b0f19',
+                        cardBg: '#151f32',
+                        borderGray: '#24334d'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-darkBg text-slate-200 min-h-screen font-sans antialiased p-4 sm:p-6">
+
+    <div class="max-w-2xl mx-auto w-full space-y-4">
+        
+        <div class="flex justify-between items-center text-xs text-slate-400 px-1">
+            <div>User: <span class="text-twitterBlue font-bold">{{ request.user.username }}</span></div>
+            <form action="{% url 'logout' %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="hover:text-red-400 transition">🚪 Sair</button>
+            </form>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="p-3 rounded-xl text-xs bg-twitterBlue/10 border border-twitterBlue/20 text-twitterBlue text-center">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <header class="bg-cardBg p-3 rounded-2xl border border-borderGray shadow-lg flex gap-2 relative">
+            <input type="text" id="inputArquivo" placeholder="Nome do arquivo ou busca..." 
+                   class="bg-darkBg border border-borderGray rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-twitterBlue text-white flex-1 min-w-0">
+            
+            <div class="relative">
+                <button type="button" 
+                        class="bg-twitterBlue hover:bg-twitterHover text-white h-full px-4 rounded-xl text-lg font-bold transition flex items-center justify-center">
+                    +
+                </button>
+                
+                <div id="dropdownOptions" class="hidden absolute right-0 mt-2 w-48 bg-slate-900 border border-borderGray rounded-xl shadow-2xl z-50 overflow-hidden">
+                    <button onclick="acaoCriar()" class="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-cardBg transition border-b border-borderGray/50 flex items-center gap-2">
+                        📄 Criar Local
+                    </button>
+                    <button onclick="acionarInputFile()" class="w-full text-left px-4 py-3 text-xs text-slate-200 hover:bg-cardBg transition flex items-center gap-2">
+                        📤 Upload de Arquivo
+                    </button>
+                </div>
+            </div>
+
+            <form id="formCriar" action="{% url 'criar_arquivo' %}" method="POST" class="hidden">
+                {% csrf_token %}
+                <input type="hidden" name="nome_do_arquivo" id="hiddenNomeCriar">
+            </form>
+
+            <form id="formUpload" action="{% url 'upload_arquivo' %}" method="POST" enctype="multipart/form-data" class="hidden">
+                {% csrf_token %}
+                <input type="file" id="inputFileFisico" name="arquivo_fisico" onchange="enviarFormUpload()">
+            </form>
+        </header>
+
+        {% if arquivo_editando %}
+        <section class="bg-cardBg p-4 rounded-2xl border border-twitterBlue/40 shadow-xl">
+            <h3 class="text-twitterBlue font-bold mb-2 text-xs">📝 Editando: {{ arquivo_editando.nome_do_arquivo }}</h3>
+            <form action="{% url 'salvar_arquivo' arquivo_editando.id %}" method="POST">
+                {% csrf_token %}
+                <textarea name="conteudo_do_arquivo" rows="8" 
+                          class="w-full bg-darkBg text-slate-200 p-3 rounded-xl border border-borderGray font-mono text-xs focus:outline-none focus:border-twitterBlue resize-none">{{ arquivo_editando.conteudo_do_arquivo }}</textarea>
+                <div class="flex justify-end gap-2 mt-3">
+                    <a href="{% url 'lista_arquivos' %}" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold">Cancelar</a>
+                    <button type="submit" class="bg-twitterBlue hover:bg-twitterHover text-white px-4 py-1.5 rounded-xl text-xs font-bold">Salvar</button>
+                </div>
+            </form>
+        </section>
+        {% endif %}
+
+        <section class="bg-cardBg p-4 rounded-2xl border border-borderGray shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-white font-bold text-sm">My Records</h2>
+                <span class="text-[10px] bg-darkBg text-twitterBlue border border-borderGray px-2 py-1 rounded-md font-medium">
+                    {{ arquivos.count }} itens
+                </span>
+            </div>
+
+            <div class="space-y-2">
+                {% for arquivo in arquivos %}
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-darkBg p-3 rounded-xl border border-borderGray gap-2">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="p-2 bg-slate-900 rounded-lg text-twitterBlue text-xs border border-borderGray flex-shrink-0">
+                            {% if arquivo.nome_do_arquivo|lower|slice:"-3:" == ".py" %}
+                                🐍
+                            {% elif arquivo.nome_do_arquivo|lower|slice:"-5:" == ".html" %}
+                                🌐
+                            {% elif arquivo.nome_do_arquivo|lower|slice:"-5:" == ".json" %}
+                                📦
+                            {% else %}
+                                📄
+                            {% endif %}
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-semibold text-white text-xs truncate">{{ arquivo.nome_do_arquivo }}</h4>
+                            <p class="text-[9px] text-slate-500">Data: {{ arquivo.created_at|date:"Y-m-d" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2 w-full sm:w-auto justify-end items-center">
+                        {% if arquivo.nome_do_arquivo|lower|slice:"-5:" == ".html" %}
+                        <a href="{% url 'visualizar_html' arquivo.id %}" target="_blank" class="flex-1 sm:flex-none text-center bg-twitterBlue/20 border border-twitterBlue text-twitterBlue hover:bg-twitterBlue hover:text-white py-1 px-3 rounded-lg text-[11px] font-semibold transition">
+                            Preview
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'abrir_editor' arquivo.id %}" class="flex-1 sm:flex-none text-center border border-borderGray text-slate-300 hover:border-twitterBlue hover:text-twitterBlue py-1 px-3 rounded-lg text-[11px] font-semibold transition">
+                            Editar
+                        </a>
+                        <a href="{% url 'deletar_arquivo' arquivo.id %}" class="flex-1 sm:flex-none text-center border border-borderGray text-slate-400 hover:border-red-500 hover:text-red-500 py-1 px-3 rounded-lg text-[11px] font-semibold transition"
+                           onclick="return confirm('Deletar registro?')">
+                            Deletar
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-8 text-slate-500 text-xs">
+                    Nenhum arquivo encontrado.
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const btnMais = document.querySelector('header button');
+        const dropdown = document.getElementById('dropdownOptions');
+
+        if (btnMais) {
+            btnMais.addEventListener('click', function(event) {
+                event.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            });
+        }
+
+        function acaoCriar() {
+            const input = document.getElementById('inputArquivo');
+            const nomeInput = input.value.trim();
+            if (!nomeInput) {
+                alert('Digite um nome na barra de pesquisa antes de criar.');
+                return;
+            }
+            document.getElementById('hiddenNomeCriar').value = nomeInput;
+            document.getElementById('formCriar').submit();
+        }
+
+        function acionarInputFile() {
+            document.getElementById('inputFileFisico').click();
+            dropdown.classList.add('hidden');
+        }
+
+        function enviarFormUpload() {
+            document.getElementById('formUpload').submit();
+        }
+
+        window.addEventListener('click', function(event) {
+            if (dropdown && !dropdown.classList.contains('hidden')) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

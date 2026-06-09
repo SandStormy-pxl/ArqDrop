@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudManager - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        twitterBlue: '#1d9bf0',
+                        twitterHover: '#1a8cd8',
+                        darkBg: '#0b0f19',
+                        cardBg: '#151f32',
+                        borderGray: '#24334d'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-darkBg text-slate-200 min-h-screen font-sans antialiased">
+
+    <div class="flex min-h-screen">
+        <aside class="w-64 bg-slate-950/40 p-6 flex flex-col justify-between border-r border-borderGray">
+            <div class="flex flex-col gap-8">
+                <div class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                    <span class="text-twitterBlue">⚡</span> CloudManager
+                </div>
+                <nav class="flex flex-col gap-2">
+                    <a href="#" class="text-twitterBlue font-semibold bg-slate-900/60 px-4 py-2.5 rounded-xl border border-borderGray/50">Storage Overview</a>
+                    <a href="#" class="text-slate-400 hover:text-white px-4 py-2.5 rounded-xl transition">Uploads</a>
+                    <a href="#" class="text-slate-400 hover:text-white px-4 py-2.5 rounded-xl transition">Settings</a>
+                </nav>
+            </div>
+            
+            <form action="{% url 'logout' %}" method="POST" class="w-full">
+                {% csrf_token %}
+                <button type="submit" class="w-full text-left text-slate-400 hover:text-red-400 px-4 py-2 rounded-xl transition text-sm">
+                    🚪 Sair da conta
+                </button>
+            </form>
+        </aside>
+
+        <main class="flex-1 p-8 max-w-5xl">
+            <header class="flex justify-between items-center mb-8 bg-cardBg p-4 rounded-2xl border border-borderGray shadow-lg">
+                <div class="text-sm font-medium text-slate-300">
+                    Logged in as: <span class="text-twitterBlue font-bold">{{ request.user.username }}</span>
+                </div>
+                <form action="{% url 'criar_arquivo' %}" method="POST" class="flex gap-2">
+                    {% csrf_token %}
+                    <input type="text" name="nome_do_arquivo" placeholder="Search or create files..." required
+                           class="bg-darkBg border border-borderGray rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-twitterBlue text-white w-64">
+                    <button type="submit" class="bg-twitterBlue hover:bg-twitterHover text-white px-5 py-2 rounded-xl text-sm font-bold transition">
+                        + New File
+                    </button>
+                </form>
+            </header>
+
+            {% if arquivo_editando %}
+            <section class="mb-8 bg-cardBg p-6 rounded-2xl border border-twitterBlue/40 shadow-xl shadow-twitterBlue/5 animate-fade-in">
+                <h3 class="text-twitterBlue font-bold mb-3 flex items-center gap-2">📝 {{ arquivo_editando.nome_do_arquivo }}</h3>
+                <form action="{% url 'salvar_arquivo' arquivo_editando.id %}" method="POST">
+                    {% csrf_token %}
+                    <textarea name="conteudo_do_arquivo" rows="10" 
+                              class="w-full bg-darkBg text-emerald-400 p-4 rounded-xl border border-borderGray font-mono text-sm focus:outline-none focus:border-twitterBlue resize-none">{{ arquivo_editando.conteudo_do_arquivo }}</textarea>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <a href="{% url 'lista_arquivos' %}" class="bg-slate-800 hover:bg-slate-700 px-5 py-2 rounded-xl text-sm font-bold transition">Cancelar</a>
+                        <button type="submit" class="bg-twitterBlue hover:bg-twitterHover text-white px-6 py-2 rounded-xl text-sm font-bold transition">Salvar Alterações</button>
+                    </div>
+                </form>
+            </section>
+            {% endif %}
+
+            <section class="bg-cardBg p-6 rounded-2xl border border-borderGray shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-white font-bold text-lg tracking-tight">My Records</h2>
+                    <div class="flex bg-darkBg p-1 rounded-xl text-xs border border-borderGray">
+                        <span class="px-4 py-2 rounded-lg text-slate-500 cursor-pointer">All Files</span>
+                        <span class="bg-twitterBlue text-white px-4 py-2 rounded-lg font-medium shadow-md shadow-twitterBlue/10 cursor-pointer">My Files</span>
+                        <span class="px-4 py-2 rounded-lg text-slate-500 cursor-pointer">Recent</span>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    {% for arquivo in arquivos %}
+                    <div class="flex items-center justify-between bg-darkBg p-4 rounded-xl border border-borderGray hover:border-slate-700 transition duration-200">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 bg-slate-900 rounded-xl text-twitterBlue border border-borderGray">
+                                📄
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-white text-sm">{{ arquivo.nome_do_arquivo }}</h4>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Created Date: {{ arquivo.created_at|date:"Y-m-d" }}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="{% url 'abrir_editor' arquivo.id %}" class="border border-borderGray text-slate-300 hover:border-twitterBlue hover:text-twitterBlue p-2 px-4 rounded-xl text-xs font-semibold transition">
+                                Editar
+                            </a>
+                            <a href="{% url 'deletar_arquivo' arquivo.id %}" class="border border-borderGray text-slate-400 hover:border-red-500 hover:text-red-500 p-2 px-4 rounded-xl text-xs font-semibold transition"
+                               onclick="return confirm('Deletar este registro permanentemente?')">
+                                Deletar
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-16 text-slate-500 text-sm">
+                        No records found for your account.
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+    </div>
+
+</body>
+</html>

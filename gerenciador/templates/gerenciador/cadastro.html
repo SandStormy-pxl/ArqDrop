@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - CloudManager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        twitterBlue: '#1d9bf0',
+                        twitterHover: '#1a8cd8',
+                        darkBg: '#0b0f19',
+                        cardBg: '#151f32',
+                        borderGray: '#24334d'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        p input {
+            width: 100%;
+            background-color: #0b0f19;
+            border: 1px solid #24334d;
+            border-radius: 0.75rem;
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+            color: white;
+            outline: none;
+            margin-top: 0.375rem;
+            margin-bottom: 1rem;
+        }
+        p input:focus {
+            border-color: #1d9bf0;
+        }
+        ul.errorlist {
+            color: #f87171;
+            font-size: 0.75rem;
+            margin-bottom: 1rem;
+            list-style-type: disc;
+            padding-left: 1rem;
+        }
+        span.helptext {
+            display: block;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: -0.5rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-darkBg text-slate-200 min-h-screen flex items-center justify-center font-sans antialiased p-4">
+
+    <div class="w-full max-w-md bg-cardBg p-6 lg:p-8 rounded-2xl border border-borderGray shadow-2xl mx-auto">
+        <div class="text-center mb-6">
+            <h2 class="text-xl font-bold text-white tracking-tight">Create your account</h2>
+            <p class="text-sm text-slate-400 mt-1">Join CloudManager</p>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="text-sm text-slate-300">
+                {{ form.as_p }}
+            </div>
+            
+            <button type="submit" class="w-full bg-twitterBlue hover:bg-twitterHover text-white py-2.5 rounded-xl font-bold text-sm transition mt-4 shadow-lg shadow-twitterBlue/10">
+                Sign Up
+            </button>
+        </form>
+
+        <div class="text-center mt-6 text-xs lg:text-sm text-slate-400">
+            Already have an account? <a href="{% url 'login' %}" class="text-twitterBlue hover:underline">Log in</a>
+        </div>
+    </div>
+
+</body>
+</html>
