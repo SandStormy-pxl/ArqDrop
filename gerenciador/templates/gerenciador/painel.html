@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Controle Pessoal</title>
+</head>
+<body>
+    <h1>💻 Gerenciador do Projeto</h1>
+
+    <h2>🐚 Executar Comando Bash</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="comando_bash" placeholder="Ex: ls -la" style="width: 300px;">
+        <button type="submit">Executar Bash</button>
+    </form>
+
+    <h2>🐍 Executar Código Python</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <textarea name="codigo_python" rows="5" cols="40" placeholder="import gerenciador.models..."></textarea>
+        <br>
+        <button type="submit">Executar Python</button>
+    </form>
+
+    {% if resultado %}
+        <h2>📊 Saída do Terminal:</h2>
+        <pre style="background: #f4f4f4; padding: 10px;">{{ resultado }}</pre>
+    {% endif %}
+</body>
+</html>
