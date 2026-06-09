@@ -2,29 +2,50 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Painel de Controle Pessoal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle do Projeto</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f9f9f9; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        textarea, input[type="text"] { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: monospace; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background-color: #0056b3; }
+        pre { background-color: #1e1e1e; color: #f1f1f1; padding: 15px; border-radius: 4px; overflow-x: auto; font-family: monospace; white-space: pre-wrap; }
+        .box { border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 20px; border-radius: 6px; background: #fafafa; }
+    </style>
 </head>
 <body>
-    <h1>💻 Gerenciador do Projeto</h1>
+<div class="container">
+    <h1>💻 Gerenciador de Execução</h1>
+    <p>Ambiente pessoal para controle do projeto Django na Vercel.</p>
 
-    <h2>🐚 Executar Comando Bash</h2>
-    <form method="POST">
-        {% csrf_token %}
-        <input type="text" name="comando_bash" placeholder="Ex: ls -la" style="width: 300px;">
-        <button type="submit">Executar Bash</button>
-    </form>
+    <div class="box">
+        <h3>🐚 Terminal Bash (Linux)</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <label>Digite o comando (Ex: <code>ls -la</code> ou <code>pwd</code>):</label>
+            <input type="text" name="comando_bash" placeholder="ls" required>
+            <button type="submit">Executar Comando Bash</button>
+        </form>
+    </div>
 
-    <h2>🐍 Executar Código Python</h2>
-    <form method="POST">
-        {% csrf_token %}
-        <textarea name="codigo_python" rows="5" cols="40" placeholder="import gerenciador.models..."></textarea>
-        <br>
-        <button type="submit">Executar Python</button>
-    </form>
+    <div class="box">
+        <h3>🐍 Executor Python (Django Context)</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <label>Digite o código Python (Ex: <code>from gerenciador.models import *; print(Objeto.objects.all())</code>):</label>
+            <textarea name="codigo_python" rows="6" placeholder="print('Olá Mundo')" required></textarea>
+            <button type="submit">Executar Código Python</button>
+        </form>
+    </div>
 
-    {% if resultado %}
-        <h2>📊 Saída do Terminal:</h2>
-        <pre style="background: #f4f4f4; padding: 10px;">{{ resultado }}</pre>
+    {% if resultado or comando_anterior %}
+    <div class="box" style="background: #f0f0f0;">
+        <h3>📊 Saída do Último Comando ({{ tipo_anterior }}):</h3>
+        <p style="font-size: 12px; color: #666;">Comando executado: <code>{{ comando_anterior }}</code></p>
+        <pre>{{ resultado|default:"[Comando executado com sucesso, mas não retornou nenhum texto de saída]" }}</pre>
+    </div>
     {% endif %}
+</div>
 </body>
 </html>
