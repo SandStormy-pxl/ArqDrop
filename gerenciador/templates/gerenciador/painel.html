@@ -2,98 +2,82 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Termux</title>
+    <title>Django Terminal Panel</title>
     <style>
-        body { 
-            background-color: #000; 
-            color: #fff; 
-            font-family: monospace; 
-            margin: 20px; 
-        }
-        form { 
-            margin-bottom: 20px; 
-        }
-        .prompt-container {
-            display: flex;
-            align-items: flex-start;
-        }
-        .prompt { 
-            color: #0f0; 
-            font-weight: bold; 
-            margin-right: 5px; 
-            white-space: nowrap;
-        }
-        input, textarea { 
-            background: none; 
-            color: #fff; 
-            border: none; 
-            outline: none; 
-            font-family: monospace; 
-            font-size: 1rem; 
-            width: 85%; 
-            padding: 0;
-            margin: 0;
-        }
-        textarea { 
-            height: 150px; 
-            resize: none;
-        }
-        button { 
-            display: none; 
-        }
-        pre { 
-            color: #fff; 
-            font-family: monospace; 
-            white-space: pre-wrap; 
-            margin-top: 20px; 
-            border-top: 1px solid #222; 
-            padding-top: 20px; 
-        }
+        body { background-color: #121212; color: #fff; font-family: monospace; padding: 20px; }
+        textarea { width: 100%; height: 150px; background: #1e1e1e; color: #00ff00; border: 1px solid #333; padding: 10px; font-family: monospace; }
+        button { background: #333; color: #fff; border: 1px solid #555; padding: 10px 20px; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #444; }
+        #console-log { background: #000; border: 1px solid #222; padding: 15px; margin-top: 20px; min-height: 100px; white-space: pre-wrap; color: #ffffff; }
     </style>
 </head>
 <body>
 
-    <form method="POST" id="terminal-form">
-        {% csrf_token %}
-        
-        <input type="hidden" name="modo_atual" value="{{ modo }}">
+    <h3>Terminal Python Interactive</h3>
+    <textarea id="codigo-python" placeholder="Digite seu código Python aqui..."></textarea>
+    <br>
+    <button onclick="processarEEnviarCodigo()">Executar Comando</button>
 
-        <div class="prompt-container">
-            {% if modo == 'python' %}
-                <span class="prompt">&gt;&gt;&gt;</span>
-                <textarea name="comando" placeholder="código python" autofocus autocomplete="off"></textarea>
-            {% else %}
-                <span class="prompt">~$</span>
-                <input type="text" name="comando" placeholder="comando bash" autofocus autocomplete="off">
-            {% endif %}
-        </div>
-        <button type="submit"></button>
-    </form>
-
-    {% if resultado %}
-        <pre>{{ resultado }}</pre>
-    {% endif %}
+    <h4>Saída do Console:</h4>
+    <div id="console-log"></div>
 
     <script>
-        const textarea = document.querySelector('textarea');
-        if (textarea) {
-            let ultimoEnter = 0;
+        async function processarEEnviarCodigo() {
+            const campoCodigo = document.getElementById('codigo-python').value;
+            const consoleLog = document.getElementById('console-log');
+            
+            // Limpa o console antes de rodar
+            consoleLog.innerText = "Processando...";
 
-            textarea.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    const agora = new Date().getTime();
-                    const diferenca = agora - ultimoEnter;
+            // Divide o código em linhas para analisar se existem inputs
+            const linhas = campoCodigo.split('\n');
+            const listaRespostas = [];
+
+            // Expressão regular para detectar chamadas de input()
+            const regexInput = /input\s*\((.*?)\)/;
+
+            for (let i = 0; i < linhas.length; i++) {
+                const linha = linhas[i];
+                
+                // Se a linha contiver um comando input(), o JS intercepta
+                if (regexInput.test(linha)) {
+                    // Extrai o texto de dentro do input("texto") se houver
+                    const match = linha.match(regexInput);
+                    const promptTexto = match[1] ? match[1].replace(/['"]/g, '') : "Digite a entrada para o Python:";
                     
-                    // Se o intervalo entre os dois Enters for menor que 500ms, envia o formulário
-                    if (diferenca < 500) {
-                        e.preventDefault();
-                        this.form.submit();
-                    }
+                    // Abre a janela interativa no navegador para o usuário responder
+                    const respostaUsuario = prompt(promptTexto);
                     
-                    ultimoEnter = agora;
+                    // Adiciona a resposta na lista que será enviada ao Django
+                    listaRespostas.push(respostaUsuario || "");
                 }
-            });
+            }
+
+            // Envia os dados estruturados via POST para a View do Django
+            try {
+                const response = await fetch('/executar-codigo/', { // Substitua pela URL da sua view
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        codigo: campoCodigo,
+                        respostas: listaRespostas
+                    })
+                });
+
+                const dados = await response.json();
+
+                // Exibe o resultado do print() ou o erro do Python na tela
+                if (dados.erro) {
+                    consoleLog.innerText = `Erro Python:\n${dados.erro}`;
+                } else {
+                    consoleLog.innerText = dados.saida || "Código executado com sucesso (sem saídas de texto).";
+                }
+
+            } catch (erroRede) {
+                consoleLog.innerText = `Erro de comunicação com o servidor: ${erroRede}`;
+            }
         }
     </script>
 </body>
