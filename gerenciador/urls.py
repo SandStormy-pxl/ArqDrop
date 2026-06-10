@@ -16,5 +16,7 @@ urlpatterns = [
     path('deletar/<int:arquivo_id>/', views.deletar_arquivo, name='deletar_arquivo'),
     path('upload/', views.upload_arquivo, name='upload_arquivo'),
     path('preview/<int:arquivo_id>/', views.visualizar_html, name='visualizar_html'),
+    path('executar-codigo/', views.executar_codigo_view, name='executar_codigo'),
+
 
 ]
