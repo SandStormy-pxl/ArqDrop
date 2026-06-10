@@ -107,7 +107,7 @@ import sys
 import io
 
 @csrf_exempt
-def ejecutar_codigo_view(request):
+def executar_codigo_view(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
