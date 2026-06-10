@@ -145,29 +145,8 @@ def executar_codigo_view(request):
 @csrf_exempt
 def executar_bash_view(request):
     if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            comando = data.get('comando', '')
-
-            # Executa o comando isolando a saída e os erros do sistema
-            resultado = subprocess.run(
-                comando,
-                shell=True,
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-
-            # Mesmo se o comando falhar (returncode != 0), retornamos o erro como JSON
-            # Isso evita que o Django lance um erro 500 global
-            return JsonResponse({
-                'saida': resultado.stdout,
-                'erro': resultado.stderr if resultado.returncode != 0 else None
-            })
-
-        except Exception as e:
-            # Captura qualquer outra falha (como falta de permissão ou comando inexistente)
-            return JsonResponse({
-                'saida': '',
-                'erro': f"Falha na execução do comando: {str(e)}"
-            })
+        # Retorna uma resposta fixa sem usar subprocess
+        return JsonResponse({
+            'saida': "Conexao com a view Bash realizada com sucesso (Modo Teste).",
+            'erro': None
+        })
