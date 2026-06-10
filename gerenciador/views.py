@@ -106,48 +106,53 @@ from io import StringIO
 from django.shortcuts import render
 
 def painel_controle(request):
+    # Recupera o modo atual da sessão. O padrão inicial é 'bash'
+    modo = request.session.get('terminal_modo', 'bash')
     resultado = ""
     comando_anterior = ""
-    tipo_anterior = ""
 
     if request.method == "POST":
-        # Verifica qual formulário foi enviado
-        if "comando_bash" in request.POST:
-            comando = request.POST.get("comando_bash", "")
-            comando_anterior = comando
-            tipo_anterior = "Bash"
-            try:
-                # Executa o comando Bash no ambiente Linux da Vercel
-                execucao = subprocess.run(
-                    comando, shell=True, capture_output=True, text=True, timeout=10
-                )
-                resultado = execucao.stdout + execucao.stderr
-            except Exception as e:
-                resultado = f"Erro ao executar Bash: {str(e)}"
+        comando = request.POST.get("comando", "").strip()
+        comando_anterior = comando
 
-        elif "codigo_python" in request.POST:
-            codigo = request.POST.get("codigo_python", "")
-            comando_anterior = codigo
-            tipo_anterior = "Python"
+        # --- LÓGICA DE TRANSIÇÃO DE ESTADOS ---
+        if modo == 'bash' and comando == 'python':
+            request.session['terminal_modo'] = 'python'
+            modo = 'python'
+            resultado = "Python 3.12 (Django Context)\nDigite 'exit()' para voltar ao Bash."
+        
+        elif modo == 'python' and comando == 'exit()':
+            request.session['terminal_modo'] = 'bash'
+            modo = 'bash'
+            resultado = "Voltou para o modo Bash Shell."
+        
+        # --- LÓGICA DE EXECUÇÃO ---
+        else:
+            if modo == 'bash':
+                try:
+                    execucao = subprocess.run(
+                        comando, shell=True, capture_output=True, text=True, timeout=10
+                    )
+                    resultado = execucao.stdout + execucao.stderr
+                except Exception as e:
+                    resultado = f"Erro Bash: {str(e)}"
             
-            # Redireciona a saída do print() para uma variável
-            antigo_stdout = sys.stdout
-            resultado_string = StringIO()
-            sys.stdout = resultado_string
-            
-            try:
-                # Executa o código Python no contexto do Django
-                exec(codigo, globals())
-                resultado = resultado_string.getvalue()
-            except Exception as e:
-                resultado = f"Erro no script Python:\n{str(e)}"
-            finally:
-                # Restaura a saída padrão do sistema
-                sys.stdout = antigo_stdout
+            elif modo == 'python':
+                antigo_stdout = sys.stdout
+                resultado_string = StringIO()
+                sys.stdout = resultado_string
+                
+                try:
+                    exec(comando, globals())
+                    resultado = resultado_string.getvalue()
+                except Exception as e:
+                    resultado = f"Erro Python:\n{str(e)}"
+                finally:
+                    sys.stdout = antigo_stdout
 
     contexto = {
         "resultado": resultado,
         "comando_anterior": comando_anterior,
-        "tipo_anterior": tipo_anterior,
+        "modo": modo,
     }
     return render(request, "gerenciador/painel.html", contexto)
