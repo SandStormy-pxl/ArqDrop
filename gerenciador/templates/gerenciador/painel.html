@@ -56,6 +56,9 @@
 
     <form method="POST" id="terminal-form">
         {% csrf_token %}
+        
+        <input type="hidden" name="modo_atual" value="{{ modo }}">
+
         <div class="prompt-container">
             {% if modo == 'python' %}
                 <span class="prompt">&gt;&gt;&gt;</span>
