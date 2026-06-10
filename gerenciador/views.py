@@ -149,6 +149,7 @@ def executar_bash_view(request):
             data = json.loads(request.body)
             comando = data.get('comando', '')
 
+            # Executa o comando isolando a saída e os erros do sistema
             resultado = subprocess.run(
                 comando,
                 shell=True,
@@ -157,18 +158,16 @@ def executar_bash_view(request):
                 timeout=5
             )
 
-            if resultado.returncode != 0:
-                return JsonResponse({
-                    'saida': '',
-                    'erro': resultado.stderr or f"Comando falhou com código {resultado.returncode}"
-                })
-
+            # Mesmo se o comando falhar (returncode != 0), retornamos o erro como JSON
+            # Isso evita que o Django lance um erro 500 global
             return JsonResponse({
                 'saida': resultado.stdout,
-                'erro': None
+                'erro': resultado.stderr if resultado.returncode != 0 else None
             })
 
-        except subprocess.TimeoutExpired:
-            return JsonResponse({'saida': '', 'erro': 'O comando demorou muito para responder (Timeout).'})
         except Exception as e:
-            return JsonResponse({'saida': '', 'erro': f'Erro interno no servidor: {str(e)}'})
+            # Captura qualquer outra falha (como falta de permissão ou comando inexistente)
+            return JsonResponse({
+                'saida': '',
+                'erro': f"Falha na execução do comando: {str(e)}"
+            })
