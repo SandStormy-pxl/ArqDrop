@@ -100,7 +100,6 @@ def visualizar_html(request, arquivo_id):
     return HttpResponse(arquivo.conteudo_do_arquivo, content_type="text/html")
 
 
-
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -108,50 +107,55 @@ import sys
 import io
 
 @csrf_exempt
-def executar_codigo_view(request):
+def ejecutar_codigo_view(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        codigo = data.get('codigo', '')
-        # O JavaScript vai enviar uma lista com as respostas dos inputs na ordem correta
-        respostas = data.get('respostas', []) 
-        
-        # Criamos um iterador para distribuir as respostas uma por uma
-        iterador_respostas = iter(respostas)
-        
-        # Esta função vai substituir o input() tradicional do Python
-        def input_simulado(prompt=""):
-            try:
-                # Retorna a próxima resposta da lista
-                return next(iterador_respostas)
-            except StopIteration:
-                # Se o código pedir mais inputs do que o enviado, gera o erro para o JS tratar
-                raise EOFError("EOF quando lia uma linha (sem mais entradas fornecidas)")
-
-        # Captura a saída do comando print()
-        stdout_antigo = sys.stdout
-        sys.stdout = buffer_saida = io.StringIO()
-        
-        # Configura o ambiente de execução injetando o nosso input customizado
-        ambiente_execucao = {
-            '__builtins__': __builtins__.copy(),
-        }
-        ambiente_execucao['__builtins__']['input'] = input_simulado
-        
-        erro = None
         try:
-            # Executa o bloco de código
-            exec(codigo, ambiente_execucao)
-        except Exception as e:
-            erro = str(e)
+            data = json.loads(request.body)
+            codigo = data.get('codigo', '')
+            respostas = data.get('respostas', []) 
             
-        # Restaura o stdout padrão
-        sys.stdout = stdout_antigo
-        saida_terminal = buffer_saida.getvalue()
-        
-        return JsonResponse({
-            'saida': saida_terminal,
-            'erro': erro
-        })
+            iterador_respostas = iter(respostas)
+            
+            def input_simulado(prompt=""):
+                try:
+                    return next(iterador_respostas)
+                except StopIteration:
+                    raise EOFError("Entrada de dados não fornecida pelo usuário.")
+
+            # Função segura para substituir o exit() e evitar travamentos
+            def exit_simulado(*args, **kwargs):
+                print("Sessão finalizada pelo comando exit().")
+                return
+
+            stdout_antigo = sys.stdout
+            sys.stdout = buffer_saida = io.StringIO()
+            
+            # Monta o ambiente isolado
+            ambiente_execucao = {
+                '__builtins__': __builtins__.copy(),
+            }
+            # Sobrescreve as funções nativas de entrada e saída do console
+            ambiente_execucao['__builtins__']['input'] = input_simulado
+            ambiente_execucao['__builtins__']['exit'] = exit_simulado
+            ambiente_execucao['__builtins__']['quit'] = exit_simulado
+            
+            erro = None
+            try:
+                exec(codigo, ambiente_execucao)
+            except Exception as e:
+                erro = str(e)
+                
+            sys.stdout = stdout_antigo
+            saida_terminal = buffer_saida.getvalue()
+            
+            return JsonResponse({
+                'saida': saida_terminal,
+                'erro': erro
+            })
+        except Exception as e:
+            return JsonResponse({'saida': '', 'erro': f'Erro interno no servidor: {str(e)}'})
+
+
 
 
 
