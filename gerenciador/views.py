@@ -213,3 +213,46 @@ def painel_controle(request):
         "modo": modo,
     }
     return render(request, "gerenciador/painel.html", contexto)
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+import subprocess
+
+@csrf_exempt
+def executar_bash_view(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            comando = data.get('comando', '')
+            
+            # Executa o comando no sistema operacional
+            # shell=True permite comandos do bash como 'ls', 'pwd', 'echo'
+            resultado = subprocess.run(
+                comando,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=5 # Evita que comandos travados travem o servidor
+            )
+            
+            # Se o comando falhar no bash, pegamos o stderr (erro do sistema)
+            if resultado.returncode != 0:
+                return JsonResponse({
+                    'saida': '',
+                    'erro': resultado.stderr or f"Comando falhou com código {resultado.returncode}"
+                })
+            
+            # Se der certo, devolvemos a saída padrão (stdout)
+            return JsonResponse({
+                'saida': resultado.stdout,
+                'erro': None
+            })
+            
+        except subprocess.TimeoutExpired:
+            return JsonResponse({'saida': '', 'erro': 'O comando demorou muito para responder (Timeout).'})
+        except Exception as e:
+            return JsonResponse({'saida': '', 'erro': f'Erro interno no servidor: {str(e)}'})
+
