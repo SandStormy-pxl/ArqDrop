@@ -107,8 +107,8 @@ from io import StringIO
 from django.shortcuts import render
 
 def painel_controle(request):
-    # Recupera o modo atual da sessão. O padrão inicial é 'bash'
-    modo = request.session.get('terminal_modo', 'bash')
+    # Pega o modo atual que veio do formulário. Se não vier nada, o padrão é bash
+    modo = request.POST.get('modo_atual', 'bash')
     resultado = ""
     comando_anterior = ""
 
@@ -116,18 +116,16 @@ def painel_controle(request):
         comando = request.POST.get("comando", "").strip()
         comando_anterior = comando
 
-        # --- LÓGICA DE TRANSIÇÃO DE ESTADOS ---
+        # --- TRANSIÇÃO DE ESTADOS ---
         if modo == 'bash' and comando == 'python':
-            request.session['terminal_modo'] = 'python'
             modo = 'python'
             resultado = "Python 3.12 (Django Context)\nPressione ENTER duas vezes seguidas para rodar.\nDigite 'exit()' para voltar ao Bash."
         
         elif modo == 'python' and comando == 'exit()':
-            request.session['terminal_modo'] = 'bash'
             modo = 'bash'
             resultado = "Voltou para o modo Bash Shell."
         
-        # --- LÓGICA DE EXECUÇÃO ---
+        # --- EXECUÇÃO ---
         else:
             if modo == 'bash':
                 try:
@@ -147,3 +145,13 @@ def painel_controle(request):
                     exec(comando, globals())
                     resultado = resultado_string.getvalue()
                 except Exception as e:
+                    resultado = f"Erro Python:\n{str(e)}"
+                finally:
+                    sys.stdout = antigo_stdout
+
+    contexto = {
+        "resultado": resultado,
+        "comando_anterior": comando_anterior,
+        "modo": modo,
+    }
+    return render(request, "gerenciador/painel.html", contexto)
