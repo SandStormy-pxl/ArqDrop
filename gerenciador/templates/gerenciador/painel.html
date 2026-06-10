@@ -31,15 +31,17 @@
     <script>
         let modoAtual = 'bash'; 
 
+        // Função auxiliar para exibir mensagens no terminal
         function printNoConsole(texto, classe = '') {
             const historico = document.getElementById('historico-console');
             const span = document.createElement('span');
             span.className = classe;
             span.innerText = '\n' + texto;
             historico.appendChild(span);
-            historico.scrollTop = historico.scrollHeight; // Rola para o final automaticamente
+            historico.scrollTop = historico.scrollHeight; // Rola a tela para o comando mais recente
         }
 
+        // Monitora o teclado para disparar o comando ao pressionar Enter
         function verificarTecla(event) {
             if (event.key === 'Enter') {
                 processarLinhaComando();
@@ -53,12 +55,12 @@
 
             if (!comando) return;
 
-            // Ecoa o comando digitado no histórico estilo Termux
+            // Mostra o comando digitado no histórico antes de enviar ao servidor
             const prefixoAtual = modoAtual === 'bash' ? '$ ' : '>>> ';
             printNoConsole(prefixoAtual + comando);
-            inputField.value = ''; // Limpa a entrada imediatamente
+            inputField.value = ''; // Limpa a linha de entrada imediatamente
 
-            // 1. Controle de alternância de modo
+            // --- Gerenciamento local da alternância de modos ---
             if (modoAtual === 'bash' && comando === 'python') {
                 modoAtual = 'python';
                 promptPrefixo.innerText = '>>>';
@@ -76,14 +78,14 @@
                 return;
             }
 
-            // 2. Preparação e envio das requisições
+            // --- Configuração das URLs e pacotes de dados conforme o modo ---
             let urlDestino = '/executar-bash/';
             let corpoRequisicao = { comando: comando };
 
             if (modoAtual === 'python') {
                 urlDestino = '/executar-codigo/';
                 
-                // Análise de input() em tempo real para o modo Python
+                // Intercepta e pausa para coletar dados caso o comando contenha input()
                 const listaRespostas = [];
                 const regexInput = /input\s*\((.*?)\)/;
                 
@@ -96,7 +98,7 @@
                 corpoRequisicao = { codigo: comando, respostas: listaRespostas };
             }
 
-            // Execução via API
+            // --- Envio dos dados para as views do Django ---
             try {
                 const response = await fetch(urlDestino, {
                     method: 'POST',
