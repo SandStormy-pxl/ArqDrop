@@ -3,101 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Console Python Interativo</title>
+    <title>Termux Console</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: #0d1117; color: #c9d1d9; font-family: 'Fira Code', monospace, sans-serif; padding: 20px; }
-        .terminal-container { max-width: 900px; margin: 0 auto; background: #161b22; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-        .terminal-header { background: #21262d; padding: 10px 15px; border-bottom: 1px solid #30363d; display: flex; align-items: center; }
-        .buttons { display: flex; gap: 8px; margin-right: 15px; }
-        .btn-dot { width: 12px; height: 12px; border-radius: 50%; }
-        .btn-r { background: #ff5f56; } .btn-y { background: #ffbd2e; } .btn-g { background: #27c93f; }
-        .terminal-title { font-size: 13px; color: #8b949e; }
-        .terminal-body { padding: 15px; }
-        textarea { width: 100%; height: 180px; background: #0d1117; color: #58a6ff; border: 1px solid #30363d; border-radius: 6px; padding: 12px; font-family: inherit; font-size: 14px; resize: vertical; outline: none; }
-        textarea:focus { border-color: #58a6ff; }
-        .controls { display: flex; justify-content: flex-end; margin-top: 10px; }
-        button { background: #238636; color: #ffffff; border: 1px solid rgba(240,246,252,0.1); border-radius: 6px; padding: 8px 16px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
-        button:hover { background: #2ea043; }
-        .console-output { margin-top: 20px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 15px; min-height: 120px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
-        .status-erro { color: #f85149; }
-        .status-sucesso { color: #56d364; }
+        body { background-color: #000000; color: #02ff1b; font-family: 'Fira Code', monospace; padding: 15px; }
+        .termux-container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; height: 92vh; }
+        .visualizacao-console { flex: 1; overflow-y: auto; background-color: #000000; border: none; padding: 10px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; }
+        .linha-comando { display: flex; align-items: center; background: #000000; border-top: 1px solid #1a1a1a; padding: 10px 5px; }
+        .prompt-indicador { color: #02ff1b; font-weight: bold; margin-right: 8px; white-space: nowrap; }
+        .prompt-python { color: #00a8ff; }
+        input[type="text"] { flex: 1; background: transparent; border: none; color: #ffffff; font-family: inherit; font-size: 14px; outline: none; }
+        .texto-erro { color: #ff3838; }
+        .texto-sistema { color: #ffff00; }
     </style>
 </head>
 <body>
 
-    <div class="terminal-container">
-        <div class="terminal-header">
-            <div class="buttons">
-                <div class="btn-dot btn-r"></div>
-                <div class="btn-dot btn-y"></div>
-                <div class="btn-dot btn-g"></div>
-            </div>
-            <div class="terminal-title">bash — arq-drop.vercel.app</div>
-        </div>
-        <div class="terminal-body">
-            <textarea id="codigo-python" placeholder="# Digite seu código Python aqui&#10;# Digite exit() para limpar o console e reiniciar"></textarea>
-            <div class="controls">
-                <button onclick="processarEEnviarCodigo()">Executar Comando</button>
-            </div>
-            <div id="console-log" class="console-output"># Aguardando comandos...</div>
+    <div class="termux-container">
+        <div id="historico-console" class="visualizacao-console">Welcome to Termux v0.118 (Hybrid Node)&#10;* Type 'python' to enter Python interactive mode.&#10;* Type 'exit' or 'exit()' to return to Bash.&#10;&#10;$ Terminal pronto.</div>
+        
+        <div class="linha-comando">
+            <span id="prompt-prefixo" class="prompt-indicador">$</span>
+            <input type="text" id="input-comando" autofocus placeholder="Digite o comando e pressione Enter..." onkeydown="verificarTecla(event)">
         </div>
     </div>
 
     <script>
-        async function processarEEnviarCodigo() {
-            const campoCodigo = document.getElementById('codigo-python').value.trim();
-            const consoleLog = document.getElementById('console-log');
-            
-            if (!campoCodigo) return;
+        let modoAtual = 'bash'; 
 
-            // Se o comando for exit(), limpa a tela localmente sem submeter ao servidor
-            if (campoCodigo === 'exit()' || campoCodigo === 'exit') {
-                document.getElementById('codigo-python').value = '';
-                consoleLog.className = "console-output";
-                consoleLog.innerText = "# Console reiniciado.";
+        function printNoConsole(texto, classe = '') {
+            const historico = document.getElementById('historico-console');
+            const span = document.createElement('span');
+            span.className = classe;
+            span.innerText = '\n' + texto;
+            historico.appendChild(span);
+            historico.scrollTop = historico.scrollHeight; // Rola para o final automaticamente
+        }
+
+        function verificarTecla(event) {
+            if (event.key === 'Enter') {
+                processarLinhaComando();
+            }
+        }
+
+        async function processarLinhaComando() {
+            const inputField = document.getElementById('input-comando');
+            const promptPrefixo = document.getElementById('prompt-prefixo');
+            const comando = inputField.value.trim();
+
+            if (!comando) return;
+
+            // Ecoa o comando digitado no histórico estilo Termux
+            const prefixoAtual = modoAtual === 'bash' ? '$ ' : '>>> ';
+            printNoConsole(prefixoAtual + comando);
+            inputField.value = ''; // Limpa a entrada imediatamente
+
+            // 1. Controle de alternância de modo
+            if (modoAtual === 'bash' && comando === 'python') {
+                modoAtual = 'python';
+                promptPrefixo.innerText = '>>>';
+                promptPrefixo.className = 'prompt-indicador prompt-python';
+                printNoConsole("Python 3.10.x (Interactive Session Mode)", "texto-sistema");
+                printNoConsole("Use exit() ou exit para retornar ao Bash.", "texto-sistema");
                 return;
             }
 
-            consoleLog.className = "console-output";
-            consoleLog.innerText = "Executando no servidor...";
+            if (modoAtual === 'python' && (comando === 'exit()' || comando === 'exit')) {
+                modoAtual = 'bash';
+                promptPrefixo.innerText = '$';
+                promptPrefixo.className = 'prompt-indicador';
+                printNoConsole("Sessão Python encerrada. Voltando para o Bash.", "texto-sistema");
+                return;
+            }
 
-            const linhas = campoCodigo.split('\n');
-            const listaRespostas = [];
-            const regexInput = /input\s*\((.*?)\)/;
+            // 2. Preparação e envio das requisições
+            let urlDestino = '/executar-bash/';
+            let corpoRequisicao = { comando: comando };
 
-            for (let i = 0; i < linhas.length; i++) {
-                if (regexInput.test(linhas[i])) {
-                    const match = linhas[i].match(regexInput);
-                    const promptTexto = match[1] ? match[1].replace(/['"]/g, '') : "Entrada requisitada:";
+            if (modoAtual === 'python') {
+                urlDestino = '/executar-codigo/';
+                
+                // Análise de input() em tempo real para o modo Python
+                const listaRespostas = [];
+                const regexInput = /input\s*\((.*?)\)/;
+                
+                if (regexInput.test(comando)) {
+                    const match = comando.match(regexInput);
+                    const promptTexto = match[1] ? match[1].replace(/['"]/g, '') : "Entrada:";
                     const respostaUsuario = prompt(promptTexto);
                     listaRespostas.push(respostaUsuario || "");
                 }
+                corpoRequisicao = { codigo: comando, respostas: listaRespostas };
             }
 
+            // Execução via API
             try {
-                const response = await fetch('/executar-codigo/', {
+                const response = await fetch(urlDestino, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        codigo: campoCodigo,
-                        respostas: listaRespostas
-                    })
+                    body: JSON.stringify(corpoRequisicao)
                 });
 
                 const dados = await response.json();
 
                 if (dados.erro) {
-                    consoleLog.className = "console-output status-erro";
-                    consoleLog.innerText = `[Erro do Sistema]:\n${dados.erro}`;
+                    printNoConsole(`[Erro]: ${dados.erro}`, "texto-erro");
+                } else if (dados.saida) {
+                    printNoConsole(dados.saida);
                 } else {
-                    consoleLog.className = "console-output status-sucesso";
-                    consoleLog.innerText = dados.saida || "Comando executado sem retorno de texto.";
+                    printNoConsole("Comando executado sem retorno de texto.", "texto-sistema");
                 }
 
             } catch (erroRede) {
-                consoleLog.className = "console-output status-erro";
-                consoleLog.innerText = `Erro de comunicação: ${erroRede}`;
+                printNoConsole(`Erro de comunicação com o servidor: ${erroRede}`, "texto-erro");
             }
         }
     </script>
