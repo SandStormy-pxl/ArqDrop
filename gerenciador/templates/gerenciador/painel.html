@@ -3,135 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Termux - Gerenciador</title>
+    <title>Termux</title>
     <style>
-        /* Estilo Base do Termux */
         body { 
-            background-color: #000000; 
-            color: #ffffff; 
-            font-family: 'Courier New', Courier, monospace; 
+            background-color: #000; 
+            color: #fff; 
+            font-family: monospace; 
             margin: 20px; 
-            padding: 10px;
         }
-        .termux-container { 
-            max-width: 900px; 
-            margin: 0 auto; 
+        form { 
+            margin-bottom: 20px; 
         }
-        .welcome-text { 
-            color: #ffffff; 
-            margin-bottom: 25px; 
-            line-height: 1.4;
+        .prompt { 
+            color: #0f0; 
+            font-weight: bold; 
+            margin-right: 5px; 
         }
-        h3 { 
-            color: #4af626; 
-            margin-bottom: 5px; 
-            font-size: 1.1rem;
-        }
-        
-        /* Inputs e Caixa de Texto Estilo Prompt */
-        .prompt-line {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .prompt-symbol {
-            color: #4af626;
-            font-weight: bold;
-            margin-right: 10px;
-            white-space: nowrap;
-        }
-        input[type="text"], textarea { 
-            background-color: #000000; 
-            color: #ffffff; 
+        input, textarea { 
+            background: none; 
+            color: #fff; 
             border: none; 
             outline: none; 
-            font-family: 'Courier New', Courier, monospace; 
+            font-family: monospace; 
             font-size: 1rem; 
-            width: 100%;
+            width: 80%; 
         }
-        textarea {
-            resize: vertical;
-            border-left: 2px solid #222;
-            padding-left: 10px;
+        textarea { 
+            height: 100px; 
+            vertical-align: top; 
         }
-        
-        /* Botões Discretos estilo Terminal */
         button { 
-            background-color: #111; 
-            color: #4af626; 
-            border: 1px solid #4af626; 
-            padding: 5px 15px; 
-            font-family: 'Courier New', Courier, monospace; 
-            cursor: pointer; 
-            margin-top: 5px;
-            font-size: 0.9rem;
-        }
-        button:hover { 
-            background-color: #4af626; 
-            color: #000000; 
-        }
-        
-        /* Bloco de Output do Terminal */
-        .terminal-output { 
-            margin-top: 30px; 
-            border-top: 1px dashed #333; 
-            padding-top: 20px;
+            display: none; 
         }
         pre { 
-            color: #ffffff; 
-            background-color: #000000; 
+            color: #fff; 
+            font-family: monospace; 
             white-space: pre-wrap; 
-            word-wrap: break-word; 
-            font-family: 'Courier New', Courier, monospace; 
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-        .box {
-            margin-bottom: 35px;
+            margin-top: 20px; 
+            border-top: 1px solid #222; 
+            padding-top: 20px; 
         }
     </style>
 </head>
 <body>
-<div class="termux-container">
-    
-    <div class="welcome-text">
-        Welcome to Termux-Web Manager!<br>
-        OS context: Vercel Serverless (Linux)<br>
-        Working with local commands & Python environment.
-    </div>
 
-    <div class="box">
-        <h3>Subscribing to Bash Shell:</h3>
-        <form method="POST">
-            {% csrf_token %}
-            <div class="prompt-line">
-                <span class="prompt-symbol">~ $</span>
-                <input type="text" name="comando_bash" placeholder="pkg search <query> ou ls" autofocus required autocomplete="off">
-            </div>
-            <button type="submit">Execute Bash</button>
-        </form>
-    </div>
+    <form method="POST">
+        {% csrf_token %}
+        <span class="prompt">~$</span>
+        <input type="text" name="comando_bash" placeholder="comando bash" autofocus autocomplete="off">
+        <button type="submit"></button>
+    </form>
 
-    <div class="box">
-        <h3>Subscribing to Python Engine:</h3>
-        <form method="POST">
-            {% csrf_token %}
-            <div class="prompt-line" style="align-items: flex-start;">
-                <span class="prompt-symbol">>>></span>
-                <textarea name="codigo_python" rows="5" placeholder="print('Executar comandos Python do Django...')" required></textarea>
-            </div>
-            <button type="submit">Execute Python</button>
-        </form>
-    </div>
+    <form method="POST">
+        {% csrf_token %}
+        <span class="prompt">&gt;&gt;&gt;</span>
+        <textarea name="codigo_python" placeholder="código python"></textarea>
+        <button type="submit"></button>
+    </form>
 
-    {% if resultado or comando_anterior %}
-    <div class="terminal-output">
-        <h3>Report issues / Log output ({{ tipo_anterior }}):</h3>
-        <p style="color: #888; font-size: 0.85rem; margin: 5px 0;">Last command: {{ comando_anterior }}</p>
-        <pre>{{ resultado|default:"[Process completed with no output text]" }}</pre>
-    </div>
+    {% if resultado %}
+        <pre>{{ resultado }}</pre>
     {% endif %}
 
-</div>
+    <script>
+        let ultimoEnter = 0;
+
+        document.querySelector('textarea').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const agora = new Date().getTime();
+                const diferenca = agora - ultimoEnter;
+                
+                // Se o intervalo entre os dois Enters for menor que 500ms, envia
+                if (diferenca < 500) {
+                    e.preventDefault();
+                    this.form.submit();
+                }
+                
+                ultimoEnter = agora;
+            }
+        });
+    </script>
 </body>
 </html>
