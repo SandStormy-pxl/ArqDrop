@@ -100,6 +100,7 @@ def visualizar_html(request, arquivo_id):
     return HttpResponse(arquivo.conteudo_do_arquivo, content_type="text/html")
 
 
+
 import sys
 import subprocess
 from io import StringIO
@@ -119,7 +120,7 @@ def painel_controle(request):
         if modo == 'bash' and comando == 'python':
             request.session['terminal_modo'] = 'python'
             modo = 'python'
-            resultado = "Python 3.12 (Django Context)\nDigite 'exit()' para voltar ao Bash."
+            resultado = "Python 3.12 (Django Context)\nPressione ENTER duas vezes seguidas para rodar.\nDigite 'exit()' para voltar ao Bash."
         
         elif modo == 'python' and comando == 'exit()':
             request.session['terminal_modo'] = 'bash'
@@ -146,13 +147,3 @@ def painel_controle(request):
                     exec(comando, globals())
                     resultado = resultado_string.getvalue()
                 except Exception as e:
-                    resultado = f"Erro Python:\n{str(e)}"
-                finally:
-                    sys.stdout = antigo_stdout
-
-    contexto = {
-        "resultado": resultado,
-        "comando_anterior": comando_anterior,
-        "modo": modo,
-    }
-    return render(request, "gerenciador/painel.html", contexto)
