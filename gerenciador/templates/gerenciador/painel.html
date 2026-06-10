@@ -19,18 +19,14 @@
             font-weight: bold; 
             margin-right: 5px; 
         }
-        input, textarea { 
+        input { 
             background: none; 
             color: #fff; 
             border: none; 
             outline: none; 
             font-family: monospace; 
             font-size: 1rem; 
-            width: 80%; 
-        }
-        textarea { 
-            height: 100px; 
-            vertical-align: top; 
+            width: 85%; 
         }
         button { 
             display: none; 
@@ -49,15 +45,15 @@
 
     <form method="POST">
         {% csrf_token %}
-        <span class="prompt">~$</span>
-        <input type="text" name="comando_bash" placeholder="comando bash" autofocus autocomplete="off">
-        <button type="submit"></button>
-    </form>
-
-    <form method="POST">
-        {% csrf_token %}
-        <span class="prompt">&gt;&gt;&gt;</span>
-        <textarea name="codigo_python" placeholder="código python"></textarea>
+        
+        {% if modo == 'python' %}
+            <span class="prompt">&gt;&gt;&gt;</span>
+            <input type="text" name="comando" placeholder="código python" autofocus autocomplete="off">
+        {% else %}
+            <span class="prompt">~$</span>
+            <input type="text" name="comando" placeholder="comando bash" autofocus autocomplete="off">
+        {% endif %}
+        
         <button type="submit"></button>
     </form>
 
@@ -65,23 +61,5 @@
         <pre>{{ resultado }}</pre>
     {% endif %}
 
-    <script>
-        let ultimoEnter = 0;
-
-        document.querySelector('textarea').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const agora = new Date().getTime();
-                const diferenca = agora - ultimoEnter;
-                
-                // Se o intervalo entre os dois Enters for menor que 500ms, envia
-                if (diferenca < 500) {
-                    e.preventDefault();
-                    this.form.submit();
-                }
-                
-                ultimoEnter = agora;
-            }
-        });
-    </script>
 </body>
 </html>
