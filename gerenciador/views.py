@@ -152,3 +152,60 @@ def executar_codigo_view(request):
             'saida': saida_terminal,
             'erro': erro
         })
+
+
+
+import sys
+import subprocess
+from io import StringIO
+from django.shortcuts import render
+
+def painel_controle(request):
+    # Pega o modo atual que veio do formulário. Se não vier nada, o padrão é bash
+    modo = request.POST.get('modo_atual', 'bash')
+    resultado = ""
+    comando_anterior = ""
+
+    if request.method == "POST":
+        comando = request.POST.get("comando", "").strip()
+        comando_anterior = comando
+
+        # --- TRANSIÇÃO DE ESTADOS ---
+        if modo == 'bash' and comando == 'python':
+            modo = 'python'
+            resultado = "Python 3.12 (Django Context)\nPressione ENTER duas vezes seguidas para rodar.\nDigite 'exit()' para voltar ao Bash."
+        
+        elif modo == 'python' and comando == 'exit()':
+            modo = 'bash'
+            resultado = "Voltou para o modo Bash Shell."
+        
+        # --- EXECUÇÃO ---
+        else:
+            if modo == 'bash':
+                try:
+                    execucao = subprocess.run(
+                        comando, shell=True, capture_output=True, text=True, timeout=10
+                    )
+                    resultado = execucao.stdout + execucao.stderr
+                except Exception as e:
+                    resultado = f"Erro Bash: {str(e)}"
+            
+            elif modo == 'python':
+                antigo_stdout = sys.stdout
+                resultado_string = StringIO()
+                sys.stdout = resultado_string
+                
+                try:
+                    exec(comando, globals())
+                    resultado = resultado_string.getvalue()
+                except Exception as e:
+                    resultado = f"Erro Python:\n{str(e)}"
+                finally:
+                    sys.stdout = antigo_stdout
+
+    contexto = {
+        "resultado": resultado,
+        "comando_anterior": comando_anterior,
+        "modo": modo,
+    }
+    return render(request, "gerenciador/painel.html", contexto)
